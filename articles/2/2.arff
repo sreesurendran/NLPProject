@@ -1,0 +1,9 @@
+@relation citation_data
+@attribute 50_50 real
+@attribute 25_25 real
+@attribute cited {yes,no}
+@data
+0.785,0.746,yes
+0.695,0.153,no
+0.785,0.746,yes
+0.747,0.693,no
