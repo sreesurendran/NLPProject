@@ -1,0 +1,30 @@
+
+Script Execution Order (with argument list)
+------------------------------------------
+
+(1) python create_tfidf.py <input_path> <feature>
+	Generates .tfidf files
+(2) python generate_rep.py <input_path> <feature>
+	Generates .rep files
+(3) python calculate_cosine.py <input_path> <feature>
+	Generates .feature files
+(4) python generate_feature_vec.py <input_path> <list_of_features_separated_by_space>
+	Generates .arff files
+
+Possible features:
+50_50
+0_50
+50_0
+25_25
+25_0
+0_25
+10_10
+0_10
+10_0
+Between_Placeholders
+abstract
+common_authors
+papers_published_best
+papers_published_next_best
+paper_year
+
