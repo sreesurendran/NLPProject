@@ -9,6 +9,7 @@ if(len(sys.argv) < 4):
 
 input_path = sys.argv[1].rstrip("/")
 feature = sys.argv[2]
+decision_tree_path = sys.argv[3]
 
 f_decision_trees = open(decision_tree_path,"r")
 decision_tree_list = f_decision_trees.read().splitlines()
