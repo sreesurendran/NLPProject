@@ -6,8 +6,8 @@ import string, shutil
 import xml.etree.ElementTree as ET
 import gzip
 
-if(len(sys.argv) < 6):
-    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict> <path_to_titles> <decision_tree_list>")
+if(len(sys.argv) < 7):
+    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict> <path_to_titles> <decision_tree_list> <version_number>")
     sys.exit()
 
 input_path = sys.argv[1].rstrip("/")
@@ -16,6 +16,7 @@ print "Feature List: ", feature_list
 paper_year_path = sys.argv[3].rstrip("/")
 titles_path = sys.argv[4]
 decision_tree_path = sys.argv[5]
+tree_version_number = sys.argv[6]
 features_dict = {}
 
 f_decision_trees = open(decision_tree_path,"r")
@@ -200,7 +201,7 @@ for subdir, dirs, files in os.walk(input_path):
                 else:
                     new_value.append(arff.Nominal('no'))
             master_list[x] = new_value
-        feature_vec_file_path = subdir + os.sep + subdir_basename + ".arff"
+        feature_vec_file_path = subdir + os.sep + subdir_basename + ".arff" + tree_version_number
 
         headers = list(feature_list);
         headers.append('cited')
