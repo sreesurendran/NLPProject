@@ -4,18 +4,20 @@ from collections import OrderedDict
 import arff
 import string, shutil
 import xml.etree.ElementTree as ET
+import gzip
 
-if(len(sys.argv) < 4):
-    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict>")
+if(len(sys.argv) < 5):
+    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict> <path_to_titles>")
     sys.exit()
 
 input_path = sys.argv[1].rstrip("/")
 feature_list = sys.argv[2].split()
 paper_year_path = sys.argv[3].rstrip("/")
+titles_path = sys.argv[4]
 features_dict = {}
 
 def getAuthorDict():
-    tFile = open ('/Users/sree/Desktop/Data/New/titles.out', 'r')
+    tFile = open (titles_path, 'r')
     # tFile = open (titleFile, 'r')
     authDict = dict()
     fileToAuthDict = dict()
@@ -75,11 +77,13 @@ def getNoOfCommonAuthors (authDict, fileToAuthDict, paper1, paper2):
     return len (set (fileToAuthDict[paper1]) & set (fileToAuthDict[paper2]))
 
 for subdir, dirs, files in os.walk(input_path):
+    #print "SUBDIR: " + subdir
     if subdir == input_path:
         continue
     subdir_basename = os.path.basename(subdir)
     inlink_lst = []
     j_list = []
+    j_path_list = []
     feature_dict = OrderedDict()
 
     inlink_file_path = subdir + os.sep + subdir_basename + ".ref.inlink"
@@ -91,7 +95,13 @@ for subdir, dirs, files in os.walk(input_path):
             search_document_path = input_path + os.sep + search_document + os.sep + "cit"
             if os.path.isdir(search_document_path):
                 for inner_subdir, inner_dirs, inner_files in os.walk(search_document_path):
+                    if inner_subdir == search_document_path:
+                        continue
                     j_list.append(search_document)
+                    j_path_list.append(inner_subdir)
+
+    #print "J_LIST: "
+    #print j_list
 
     if "paper_year" in feature_list:
         f_paper_year = open(paper_year_path,"r")
@@ -104,9 +114,9 @@ for subdir, dirs, files in os.walk(input_path):
 
     for feature in feature_list:
         feature_file_dict = []
-        feature_file_path = subdir + os.sep + subdir_basename + "." + feature + ".feature"
+        feature_file_path = subdir + os.sep + subdir_basename + "." + feature + ".feature.gz"
         if os.path.isfile(feature_file_path):
-            f_feature = open(feature_file_path,"r")
+            f_feature = gzip.open(feature_file_path,"r")
             feature_file_dict = pickle.load(f_feature)
             feature_dict[feature] = feature_file_dict.itervalues()
             f_feature.close()
@@ -135,6 +145,17 @@ for subdir, dirs, files in os.walk(input_path):
                 paper_year_list.append(paperyears[value])
             feature_dict[feature] = paper_year_list
 
+        if feature == "abstract":
+            abstract_file_path = subdir + os.sep + subdir_basename + ".abstractcosine.gz"
+            if os.path.isfile(abstract_file_path):
+                f_abstract = gzip.open(abstract_file_path,"r")
+                abstract_file_dict = pickle.load(f_abstract)
+                f_abstract.close()
+                abstract_list = []
+                for value in j_list:
+                    abstract_list.append(abstract_file_dict[value])
+                feature_dict[feature] = abstract_list
+
     list_of_feature_lists = []
     master_list = []
     for value in feature_dict.itervalues():
@@ -147,10 +168,11 @@ for subdir, dirs, files in os.walk(input_path):
         master_list.append(row_list)
 
     if len(master_list) > 0 :
+        print "MASTER_LIST: " 
         print master_list
         for x in xrange(0,len(master_list)):
             new_value = master_list[x]
-            documents_list_file_path = j_list[x] + os.sep + "documents.list"
+            documents_list_file_path = j_path_list[x] + os.sep + "documents.list"
             if os.path.isfile(documents_list_file_path):
                 f_documents_list = open(documents_list_file_path)
                 documents_cited = f_documents_list.read().splitlines()
@@ -162,8 +184,9 @@ for subdir, dirs, files in os.walk(input_path):
             master_list[x] = new_value
         feature_vec_file_path = subdir + os.sep + subdir_basename + ".arff"
 
-        headers = list(feature_list_arg);
+        headers = list(feature_list);
         headers.append('cited')
+        print "HEADERS:"
         print headers
         output = arff.Writer(feature_vec_file_path,relation='citation_data',names=headers)
         output.pytypes[arff.Nominal] = '{yes,no}'
