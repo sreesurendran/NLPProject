@@ -53,10 +53,6 @@ for subdir,dirs,files in os.walk(input_path):
                         f_abstract.close()
                         abstract_cosine = cx(rep_tfidf,abstract_tfidf)
                         abstract_dict[search_document] = abstract_cosine
-                        f_abstract_dict = gzip.open(subdir + os.sep + subdir_basename + ".abstractcosine.gz","w")
-                        abstract_pickled_list = pickle.dumps(abstract_dict)
-                        f_abstract_dict.write(abstract_pickled_list)
-                        f_abstract_dict.close()
                 search_document_path = input_path + os.sep + search_document + os.sep + "cit"
                 #print("SEARCH DOCUMENT PATH: %s" % search_document_path)
                 if os.path.isdir(search_document_path):
@@ -80,3 +76,8 @@ for subdir,dirs,files in os.walk(input_path):
                 pickled_list = pickle.dumps(feature_vec)
                 f_feature.write(pickled_list)
                 f_feature.close()
+            else:
+                f_abstract_dict = gzip.open(subdir + os.sep + subdir_basename + ".abstractcosine.gz","w")
+                abstract_pickled_list = pickle.dumps(abstract_dict)
+                f_abstract_dict.write(abstract_pickled_list)
+                f_abstract_dict.close()
