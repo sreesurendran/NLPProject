@@ -1,8 +1,7 @@
 import os,sys
-import numpy
+import numpy, scipy
 from collections import OrderedDict
 import pickle
-#from sklearn.metrics.pairwise import cosine_similarity
 import gzip
 
 if(len(sys.argv) < 3):
@@ -12,13 +11,16 @@ if(len(sys.argv) < 3):
 input_path = sys.argv[1].rstrip("/")
 feature = sys.argv[2]
 
-#cx = lambda a, b : round(numpy.inner(a, b)/(numpy.linalg.norm(a)*numpy.linalg.norm(b)), 3)
-
-def get_cosine(a,b):
-    if list(set(a)) != [0.0] and list(set(b)) != [0.0]:
-        return round(numpy.inner(a, b)/(numpy.linalg.norm(a)*numpy.linalg.norm(b)), 3)
+def get_cosine(a, b, c):
+    if c == 'abstract':
+        if list(set(a)) != [0.0] and list(set(b)) != [0.0]:
+            return round (numpy.inner (a, b) / (numpy.linalg.norm (a) * numpy.linalg.norm (b)), 3)
     else:
-        return -1
+        helper1 = (a * a.T).toarray ()[0][0]
+        helper2 = (b * b.T).toarray ()[0][0]
+        if helper1 != 0 and helper2 != 0:
+            return round (((a * b.T).toarray()[0][0]) / ((helper1 * helper2)**0.5), 3)
+    return -1
 
 #create the individual feature vector file
 for subdir,dirs,files in os.walk(input_path):
@@ -57,7 +59,7 @@ for subdir,dirs,files in os.walk(input_path):
                         f_abstract = gzip.open(abstract_tfidf_path,"r")
                         abstract_tfidf = pickle.load(f_abstract)
                         f_abstract.close()
-                        abstract_cosine = get_cosine(rep_tfidf,abstract_tfidf)
+                        abstract_cosine = get_cosine(rep_tfidf,abstract_tfidf, feature)
                         abstract_dict[search_document] = abstract_cosine
                 search_document_path = input_path + os.sep + search_document + os.sep + "cit"
                 #print("SEARCH DOCUMENT PATH: %s" % search_document_path)
@@ -73,8 +75,7 @@ for subdir,dirs,files in os.walk(input_path):
                                 f_arg = gzip.open(tfidf_file_path,"r")
                                 arg_tfidf = pickle.load(f_arg)
                                 f_arg.close()
-                                cosine = cx(rep_tfidf,arg_tfidf)
-                                #cosine = cosine_similarity(
+                                cosine = get_cosine(rep_tfidf,arg_tfidf, feature)
                                 feature_vec[inner_subdir] = cosine
             if feature != "abstract":
                 feature_vec_file_path = subdir + os.sep + subdir_basename + "." + feature + ".feature.gz"
