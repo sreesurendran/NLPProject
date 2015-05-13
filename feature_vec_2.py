@@ -154,7 +154,7 @@ for subdir, dirs, files in os.walk(input_path):
         if feature == "common_authors":
             common_authors_list = []
             for value in j_list:
-                common_authors_list.append(getNoOfCommonAuthors(authors[0],authors[1],subdir_basename,value))
+                common_authors_list.append(getNoOfCommonAuthors(authors[0],authors[1],int(subdir_basename),value))
             feature_dict[feature] = common_authors_list
 
         if feature == "paper_year":
