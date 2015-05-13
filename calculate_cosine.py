@@ -2,7 +2,7 @@ import os,sys
 import numpy
 from collections import OrderedDict
 import pickle
-from sklearn.metrics.pairwise import cosine_similarity
+#from sklearn.metrics.pairwise import cosine_similarity
 import gzip
 
 if(len(sys.argv) < 3):
@@ -12,7 +12,13 @@ if(len(sys.argv) < 3):
 input_path = sys.argv[1].rstrip("/")
 feature = sys.argv[2]
 
-cx = lambda a, b : round(numpy.inner(a, b)/(numpy.linalg.norm(a)*numpy.linalg.norm(b)), 3)
+#cx = lambda a, b : round(numpy.inner(a, b)/(numpy.linalg.norm(a)*numpy.linalg.norm(b)), 3)
+
+def get_cosine(a,b):
+    if len(set(a)) != [0] and len(set(b)) != [0]:
+        return round(numpy.inner(a, b)/(numpy.linalg.norm(a)*numpy.linalg.norm(b)), 3)
+    else:
+        return -1
 
 #create the individual feature vector file
 for subdir,dirs,files in os.walk(input_path):
@@ -51,7 +57,7 @@ for subdir,dirs,files in os.walk(input_path):
                         f_abstract = gzip.open(abstract_tfidf_path,"r")
                         abstract_tfidf = pickle.load(f_abstract)
                         f_abstract.close()
-                        abstract_cosine = cx(rep_tfidf,abstract_tfidf)
+                        abstract_cosine = get_cosine(rep_tfidf,abstract_tfidf)
                         abstract_dict[search_document] = abstract_cosine
                 search_document_path = input_path + os.sep + search_document + os.sep + "cit"
                 #print("SEARCH DOCUMENT PATH: %s" % search_document_path)
