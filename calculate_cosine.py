@@ -15,7 +15,7 @@ feature = sys.argv[2]
 #cx = lambda a, b : round(numpy.inner(a, b)/(numpy.linalg.norm(a)*numpy.linalg.norm(b)), 3)
 
 def get_cosine(a,b):
-    if len(set(a)) != [0] and len(set(b)) != [0]:
+    if list(set(a)) != [0.0] and list(set(b)) != [0.0]:
         return round(numpy.inner(a, b)/(numpy.linalg.norm(a)*numpy.linalg.norm(b)), 3)
     else:
         return -1
