@@ -4,12 +4,17 @@ from collections import OrderedDict
 import pickle
 import gzip
 
-if(len(sys.argv) < 3):
-    print("USAGE: python calculate_cosine.py <input_path> <feature>")
+if(len(sys.argv) < 4):
+    print("USAGE: python calculate_cosine.py <input_path> <feature> <decision_tree_path>")
     sys.exit()
 
 input_path = sys.argv[1].rstrip("/")
 feature = sys.argv[2]
+decision_tree_path = sys.argv[3]
+
+f_decision_tree = open(decision_tree_path,"r")
+decision_tree_list = f_decision_tree.read().splitlines()
+f_decision_tree.close()
 
 def get_cosine(a, b, c):
     if c == 'abstract':
@@ -22,25 +27,36 @@ def get_cosine(a, b, c):
             return round (((a * b.T).toarray()[0][0]) / ((helper1 * helper2)**0.5), 3)
     return -1
 
+totCount = 0
+
 #create the individual feature vector file
 for subdir,dirs,files in os.walk(input_path):
     #print("SUBDIR: %s" % subdir)
+    if totCount % 4000 == 0:
+        print totCount
+    totCount += 1
     if subdir == input_path:
         continue
     subdir_basename = os.path.basename(subdir)
+
+    if subdir_basename not in decision_tree_list:
+        continue
+
     if feature == "abstract":
         rep_file_path = subdir + os.sep + subdir_basename + ".abstract.words.tfidf.gz"
     else:
         rep_file_path = subdir + os.sep + subdir_basename + ".rep." + feature + ".gz"
+    
     #print "REP FILE PATH: " + rep_file_path
-    if not os.path.isfile(rep_file_path):
-        continue
-    else:
+    if os.path.isfile(rep_file_path):
         f_rep = gzip.open(rep_file_path,"r")
         rep_tfidf = pickle.load(f_rep)
         f_rep.close()
         feature_vec = OrderedDict()
         abstract_dict = OrderedDict()
+    else:
+        continue
+
     for file in files:
         name,ext = os.path.splitext(file)
         search_list = []

@@ -83,7 +83,7 @@ def createPaperYearDict (directory):
 def getNoOfCommonAuthors (authDict, fileToAuthDict, paper1, paper2):
     return len (set (fileToAuthDict.get (paper1, [])) & set (fileToAuthDict.get (paper2, [])))
 
-total_ct = 0
+totCount = 0
 
 if "paper_year" in feature_list:
     f_paper_year = open(paper_year_path,"r")
@@ -97,9 +97,9 @@ if "papers_published_best" in feature_list or "papers_published_next_best" in fe
 
 for subdir, dirs, files in os.walk(input_path):
     #print "SUBDIR: " + subdir
-
-    if total_ct % 100 == 0 and total_ct != 0:
-        print total_ct
+    if totCount % 4000 == 0:
+        print totCount
+    totCount += 1
 
     if subdir == input_path:
         continue
@@ -212,5 +212,3 @@ for subdir, dirs, files in os.walk(input_path):
         for value in master_list:
             output.write(value)
         output.close()
-
-        total_ct += 1
