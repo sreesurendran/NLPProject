@@ -192,7 +192,7 @@ for subdir, dirs, files in os.walk(input_path):
         for x in xrange(0,len(master_list)):
             new_value = master_list[x]
             documents_list_file_path = j_path_list[x] + os.sep + "documents.list"
-            if os.path.isfile(documents_list_file_path):
+            if os.path.isfile(documents_list_file_path,"r"):
                 f_documents_list = open(documents_list_file_path)
                 documents_cited = f_documents_list.read().splitlines()
                 f_documents_list.close()
