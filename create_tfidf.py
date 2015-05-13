@@ -2,6 +2,7 @@ import nltk
 import string
 import os, sys
 import pickle
+import gzip
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.stem.porter import PorterStemmer
@@ -15,6 +16,8 @@ input_path = sys.argv[1]
 feature = sys.argv[2] + ".words"
 token_dict = OrderedDict()
 stemmer = PorterStemmer()
+token_list = []
+filename_list = []
 
 def stem_tokens(tokens, stemmer):
     stemmed = []
@@ -33,17 +36,20 @@ for subdir, dirs, files in os.walk(input_path):
             file_path = subdir + os.path.sep + file
             #print("YES: " + file_path)
             shakes = open(file_path, 'r')
-            text = shakes.read()
-            lowers = text.lower()
-            no_punctuation = lowers.translate(None, string.punctuation)
-            token_dict[file_path] = no_punctuation
+            no_punctuation = shakes.read()
+            #text = shakes.read()
+            #lowers = text.lower()
+            #no_punctuation = lowers.translate(None, string.punctuation)
+            filename_list.append(file_path)
+            token_list.append(no_punctuation)
+            #token_dict[file_path] = no_punctuation
 
 #Calculate tfidf
-#tfidf = TfidfVectorizer(norm='l2',tokenizer=tokenize, stop_words='english',min_df=1)
 tfidf = TfidfVectorizer(norm='l2',tokenizer=tokenize, stop_words='english',min_df=1)
-tfs = tfidf.fit_transform(token_dict.values())
+#tfs = tfidf.fit_transform(token_dict.values())
+tfs = tfidf.fit_transform(token_list)
 print "Size of Vocabulary:", len(tfidf.vocabulary_)
-f_write = open("../vocabulary.txt","w")
+f_write = open("../vocabulary2.txt","w")
 pickled_list = pickle.dumps(tfidf.vocabulary_)
 f_write.write(pickled_list)
 f_write.close()
@@ -54,9 +60,10 @@ ct = 0
 
 #Write tfidf to file
 for row in tfs.toarray():
-    filename = token_dict.keys()[ct] + ".tfidf.gz"
+    #filename = token_dict.keys()[ct] + ".tfidf.gz"
+    filename = filename_list[ct] + ".tfidf.gz"
     pickled_list = pickle.dumps(row)
-    f = open(filename,"w")
+    f = gzip.open(filename,"w")
     #f.write(str(row))
     f.write(pickled_list)
     f.close()

@@ -39,7 +39,7 @@ for subdir, dirs, files in os.walk(input_path):
                                 f_inner.close()
                                 tfidf_zip_file_path = inner_subdir + os.sep + inner_subdir_basename + "_" + feature + ".words.tfidf.gz"
                                 if (subdir_basename in documents_cited) and (os.path.isfile(tfidf_zip_file_path)):
-                                    tfidf_file = gzip.open(tfidf_file_path,"r")
+                                    tfidf_file = gzip.open(tfidf_zip_file_path,"r")
                                     read_tfidf_file = tfidf_file.read()
                                     tfidf_values.append(pickle.loads(read_tfidf_file))
                                     tfidf_file.close()
@@ -48,7 +48,7 @@ for subdir, dirs, files in os.walk(input_path):
                 avg_tfidf = numpy.divide(sum_tfidf,len(tfidf_values))
                 rep_filename = subdir + os.sep + subdir_basename + ".rep." + feature + ".gz"
                 print("RE_PATH: " + rep_filename)
-                f_rep = open(rep_filename,"w")
+                f_rep = gzip.open(rep_filename,"w")
                 pickled_list = pickle.dumps(avg_tfidf)
                 f_rep.write(pickled_list)
                 f_rep.close()

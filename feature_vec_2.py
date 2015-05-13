@@ -6,15 +6,20 @@ import string, shutil
 import xml.etree.ElementTree as ET
 import gzip
 
-if(len(sys.argv) < 5):
-    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict> <path_to_titles>")
+if(len(sys.argv) < 6):
+    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict> <path_to_titles> <decision_tree_list>")
     sys.exit()
 
 input_path = sys.argv[1].rstrip("/")
 feature_list = sys.argv[2].split()
 paper_year_path = sys.argv[3].rstrip("/")
 titles_path = sys.argv[4]
+decision_tree_path = sys.argv[5]
 features_dict = {}
+
+f_decision_trees = open(decision_tree_path,"r")
+decision_tree_list = f_decision_trees.read().splitlines()
+f_decision_trees.close()
 
 def getAuthorDict():
     tFile = open (titles_path, 'r')
@@ -48,7 +53,7 @@ def getAuthorDict():
     return (authDict, fileToAuthDict)
 
 def getAuthorPubCount (authDict, fileToAuthDict, subdir, mode):
-    listOfPubPapers = map (lambda x: len (authDict[x]), fileToAuthDict[subdir])
+    listOfPubPapers = map (lambda x: len (authDict.get(x,[])), fileToAuthDict.get(subdir,[]))
     listOfPubPapers.sort()
     if len (listOfPubPapers) == 0:
         return 0
@@ -74,13 +79,21 @@ def createPaperYearDict (directory):
     return paperYearDict
 
 def getNoOfCommonAuthors (authDict, fileToAuthDict, paper1, paper2):
-    return len (set (fileToAuthDict[paper1]) & set (fileToAuthDict[paper2]))
+    return len (set (fileToAuthDict.get (paper1, [])) & set (fileToAuthDict.get (paper2, [])))
+
+total_ct = 0
 
 for subdir, dirs, files in os.walk(input_path):
     #print "SUBDIR: " + subdir
+
+    if total_ct % 100 == 0 and total_ct != 0:
+        print total_ct
+
     if subdir == input_path:
         continue
     subdir_basename = os.path.basename(subdir)
+    if subdir_basename not in decision_tree_list:
+        continue
     inlink_lst = []
     j_list = []
     j_path_list = []
@@ -142,7 +155,7 @@ for subdir, dirs, files in os.walk(input_path):
         if feature == "paper_year":
             paper_year_list = []
             for value in j_list:
-                paper_year_list.append(paperyears[value])
+                paper_year_list.append(paperyears.get (value, 0))
             feature_dict[feature] = paper_year_list
 
         if feature == "abstract":
@@ -168,8 +181,8 @@ for subdir, dirs, files in os.walk(input_path):
         master_list.append(row_list)
 
     if len(master_list) > 0 :
-        print "MASTER_LIST: " 
-        print master_list
+        #print "MASTER_LIST: " 
+        #print master_list
         for x in xrange(0,len(master_list)):
             new_value = master_list[x]
             documents_list_file_path = j_path_list[x] + os.sep + "documents.list"
@@ -186,10 +199,12 @@ for subdir, dirs, files in os.walk(input_path):
 
         headers = list(feature_list);
         headers.append('cited')
-        print "HEADERS:"
-        print headers
+        #print "HEADERS:"
+        #print headers
         output = arff.Writer(feature_vec_file_path,relation='citation_data',names=headers)
         output.pytypes[arff.Nominal] = '{yes,no}'
         for value in master_list:
             output.write(value)
         output.close()
+
+        total_ct += 1
