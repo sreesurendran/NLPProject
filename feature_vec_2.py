@@ -12,6 +12,7 @@ if(len(sys.argv) < 6):
 
 input_path = sys.argv[1].rstrip("/")
 feature_list = sys.argv[2].split()
+print "Feature List: ", feature_list
 paper_year_path = sys.argv[3].rstrip("/")
 titles_path = sys.argv[4]
 decision_tree_path = sys.argv[5]
@@ -83,6 +84,16 @@ def getNoOfCommonAuthors (authDict, fileToAuthDict, paper1, paper2):
 
 total_ct = 0
 
+if "paper_year" in feature_list:
+    f_paper_year = open(paper_year_path,"r")
+    paperyears = pickle.load(f_paper_year)
+    f_paper_year.close()
+    #paperyears = createPaperYearDict()
+    #print paperyears
+
+if "papers_published_best" in feature_list or "papers_published_next_best" in feature_list or "common_authors" in feature_list:
+    authors = getAuthorDict()
+
 for subdir, dirs, files in os.walk(input_path):
     #print "SUBDIR: " + subdir
 
@@ -110,20 +121,14 @@ for subdir, dirs, files in os.walk(input_path):
                 for inner_subdir, inner_dirs, inner_files in os.walk(search_document_path):
                     if inner_subdir == search_document_path:
                         continue
-                    j_list.append(search_document)
+                    try:
+                        j_list.append(int(search_document))
+                    except:
+                        pass
                     j_path_list.append(inner_subdir)
 
     #print "J_LIST: "
     #print j_list
-
-    if "paper_year" in feature_list:
-        f_paper_year = open(paper_year_path,"r")
-        paperyears = pickle.load(f_paper_year)
-        f_paper_year.close()
-        #paperyears = createPaperYearDict()
-
-    if "papers_published_best" in feature_list or "papers_published_next_best" in feature_list or "common_authors" in feature_list:
-        authors = getAuthorDict()
 
     for feature in feature_list:
         feature_file_dict = []
@@ -166,7 +171,7 @@ for subdir, dirs, files in os.walk(input_path):
                 f_abstract.close()
                 abstract_list = []
                 for value in j_list:
-                    abstract_list.append(abstract_file_dict[value])
+                    abstract_list.append(abstract_file_dict[str(value)])
                 feature_dict[feature] = abstract_list
 
     list_of_feature_lists = []
