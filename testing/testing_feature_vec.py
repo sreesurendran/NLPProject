@@ -175,7 +175,7 @@ for file in test_file_list:
         #write out the arff file
         headers = list(feature_list);
         headers.append('cited')
-        feature_vec_file_path = context + os.sep + context.split(os.sep)[-1] + ".arff" + version_number
+        feature_vec_file_path = context + os.sep + context.split(os.sep)[-1] + ".v" + version_number + ".arff"
         output = arff.Writer(feature_vec_file_path,relation='citation_data',names=headers)
         output.pytypes[arff.Nominal] = '{yes,no}'
         for value in arff_data:
