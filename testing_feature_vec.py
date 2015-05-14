@@ -235,7 +235,7 @@ for file in test_file_list:
             arff_data.append(feature_vec)
 
         #write out the arff file
-        headers = feature_list
+        headers = list(feature_list)
         headers.append('cited')
         # feature_vec_file_path = context + os.sep + context.split(os.sep)[-1] + ".v" + version_number + ".arff"
         output = arff.Writer(feature_vec_file_path,relation='citation_data',names=headers)
