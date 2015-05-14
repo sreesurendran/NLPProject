@@ -6,22 +6,27 @@ import string, shutil
 import xml.etree.ElementTree as ET
 import gzip
 
-if(len(sys.argv) < 7):
-    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict> <path_to_titles> <decision_tree_list> <version_number>")
+if(len(sys.argv) < 8):
+    print("USAGE: python generate_feature_vec.py <input_path> <feature> <path_to_year_dict> <path_to_titles> <decision_tree_list> <version_number> <restricted_set>")
     sys.exit()
 
 input_path = sys.argv[1].rstrip("/")
 feature_list = sys.argv[2].split()
-print "Feature List: ", feature_list
+# print "Feature List: ", feature_list
 paper_year_path = sys.argv[3].rstrip("/")
 titles_path = sys.argv[4]
 decision_tree_path = sys.argv[5]
 tree_version_number = sys.argv[6]
 features_dict = {}
+restricted_set_path = sys.argv[7]
 
 f_decision_trees = open(decision_tree_path,"r")
 decision_tree_list = f_decision_trees.read().splitlines()
 f_decision_trees.close()
+
+f_restricted_set = open(restricted_set_path,"r")
+restricted_set = pickle.load (f_restricted_set)
+f_restricted_set.close()
 
 def getAuthorDict():
     tFile = open (titles_path, 'r')
@@ -106,7 +111,7 @@ for subdir, dirs, files in os.walk(input_path):
     subdir_basename = os.path.basename(subdir)
     if subdir_basename not in decision_tree_list:
         continue
-    inlink_lst = []
+    # inlink_lst = []
     j_list = []
     j_path_list = []
     feature_dict = OrderedDict()
@@ -119,25 +124,23 @@ for subdir, dirs, files in os.walk(input_path):
         for search_document in inlink_list:
             search_document_path = input_path + os.sep + search_document + os.sep + "cit"
             if os.path.isdir(search_document_path):
-                for inner_subdir, inner_dirs, inner_files in os.walk(search_document_path):
-                    if inner_subdir == search_document_path:
-                        continue
-                    try:
-                        j_list.append(int(search_document))
-                    except:
-                        pass
-                    j_path_list.append(inner_subdir)
-
-    #print "J_LIST: "
-    #print j_list
+                try:
+                    helper = restricted_set.get (int (search_document), [])
+                    j_list += [int (search_document)] * len(helper)
+                    j_path_list += map(lambda x: search_document_path + os.sep + x, helper)
+                except:
+                    pass
 
     for feature in feature_list:
-        feature_file_dict = []
         feature_file_path = subdir + os.sep + subdir_basename + "." + feature + ".feature.gz"
+        # if feature in ['50_50', '50_0', '0_50', '25_25', '25_0', '0_25', '10_10', '0_10', '10_0', 'Between_Placeholders']:
         if os.path.isfile(feature_file_path):
+            feature_dict[feature] = []
             f_feature = gzip.open(feature_file_path,"r")
             feature_file_dict = pickle.load(f_feature)
-            feature_dict[feature] = feature_file_dict.itervalues()
+            for context_path in j_path_list:
+                feature_dict[feature].append (feature_file_dict.get (context_path, -1))
+            # feature_dict[feature] = feature_file_dict.values()
             f_feature.close()
         
         if feature == "papers_published_best":
@@ -172,18 +175,22 @@ for subdir, dirs, files in os.walk(input_path):
                 f_abstract.close()
                 abstract_list = []
                 for value in j_list:
-                    abstract_list.append(abstract_file_dict[str(value)])
+                    abstract_list.append(abstract_file_dict.get (str(value), -1))
                 feature_dict[feature] = abstract_list
 
     list_of_feature_lists = []
     master_list = []
     for value in feature_dict.itervalues():
         list_of_feature_lists.append(value)
+    # print list_of_feature_lists
 
-    for x in xrange(0,len(j_list)):
+    for noOfTrainingExamples in xrange(0,len(j_list)):
         row_list = []
-        for feat in list_of_feature_lists:
-            row_list.append(feat[x])
+        for featureNumberI in list_of_feature_lists:
+            # try:
+            row_list.append(featureNumberI[noOfTrainingExamples])
+            # except:
+            #     row_list.append(-1)
         master_list.append(row_list)
 
     if len(master_list) > 0 :
@@ -192,8 +199,8 @@ for subdir, dirs, files in os.walk(input_path):
         for x in xrange(0,len(master_list)):
             new_value = master_list[x]
             documents_list_file_path = j_path_list[x] + os.sep + "documents.list"
-            if os.path.isfile(documents_list_file_path,"r"):
-                f_documents_list = open(documents_list_file_path)
+            if os.path.isfile(documents_list_file_path):
+                f_documents_list = open(documents_list_file_path, 'r')
                 documents_cited = f_documents_list.read().splitlines()
                 f_documents_list.close()
                 if subdir_basename in documents_cited:
@@ -201,7 +208,7 @@ for subdir, dirs, files in os.walk(input_path):
                 else:
                     new_value.append(arff.Nominal('no'))
             master_list[x] = new_value
-        feature_vec_file_path = subdir + os.sep + subdir_basename + ".arff" + tree_version_number
+        feature_vec_file_path = subdir + os.sep + subdir_basename + ".v" + tree_version_number + ".arff"
 
         headers = list(feature_list);
         headers.append('cited')
