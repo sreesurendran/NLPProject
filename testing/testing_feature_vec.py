@@ -2,16 +2,18 @@ import sys,os,gzip,pickle
 import arff
 import shutil
 import xml.etree.ElementTree as ET
+import scipy, numpy
 
-if len(sys.argv) < 5:
-    print "USAGE: python generate_feature_vec.py <path_to_training_data> <path_to_test_files> <path_to_decision_tree_list> <feature_list> <version_number>"
+if len(sys.argv) < 6:
+    print "USAGE: python generate_feature_vec.py <path_to_training_data> <path_to_test_files> <path_to_decision_tree_list> <path_to_year_dict> <feature_list> <version_number>"
     sys.exit()
 
 input_path = sys.argv[1].rstrip("/")
 test_files_path = sys.argv[2].rstrip("/")
 decision_tree_path = sys.argv[3].rstrip("/")
-feature_list = sys.argv[4].split()
-version_number = sys.argv[5]
+paper_year_path = sys.argv[4].rstrip("/")
+feature_list = sys.argv[5].split()
+version_number = sys.argv[6]
 
 f_test_files = open(test_files_path,"r")
 test_file_list = f_test_files.read().splitlines()
@@ -24,16 +26,26 @@ f_decision_trees.close()
 #pull out the good contexts for this document
 def getContexts(directory_path):
     candidates = []
-    if os.path.isdir(directory_path):
-        for subdir, dirs, files in os.walk(directory_path):
-            for curr_file in files:
-                name,ext = os.path.splitext(curr_file)
-                if ext == ".list":
-                    f_document_list = open(subdir + os.sep + curr_file,"r")
-                    documents_list = f_document_list.read().splitlines()
-                    f_document_list.close()
-                    if len(filter(lambda x: int(x)!=0, documents_list)) != 0:
-                        candidates.append(subdir)
+    #get citation folder path for this document
+    citation_folder_path = directory_path + os.sep + "cit"
+    #check if this document has a citation folder
+    if os.path.isdir(citation_folder_path):
+        #walk the cit folder for this document
+        for current_context_folder, list_of_context_folders, files_in_context_folder in os.walk(citation_folder_path):
+            #get documents.list file path for the currect context folder
+            documents_list_file_path = current_context_folder + os.sep + "documents.list"
+            #check if this context folder has a documents list file
+            if os.path.isfile(documents_list_file_path):
+                #open the documents list file for the current context folder and pull out the list of documents
+                f_document_list = open(documents_list_file_path,"r")
+                documents_list = f_document_list.read().splitlines()
+                f_document_list.close()
+                #check if the list of documents has a non zero entry. if yes, add the current context folder to the list of candidate
+                #contexts for this document
+                #note: we're adding the entire path for the current context folder to the list of candidate contexts for this
+                #document
+                if len(filter(lambda x: int(x)!=0, documents_list)) != 0:
+                    candidates.append(current_context_folder)
     return candidates
 
 def getAuthorDict():
@@ -99,6 +111,11 @@ def getNoOfCommonAuthors (authDict, fileToAuthDict, paper1, paper2):
 if "papers_published_best" in feature_list or "papers_published_next_best" in feature_list or "common_authors" in feature_list:
     authors = getAuthorDict()
 
+if "paper_year" in feature_list:
+    f_paper_year = open(paper_year_path,"r")
+    paperyears = pickle.load(f_paper_year)
+    f_paper_year.close()
+
 def get_cosine(path1,path2,feature):
     if os.path.isfile(path1):
         f_i = gzip.open(path1,"r")
@@ -130,6 +147,7 @@ for file in test_file_list:
     directory_path = input_path + os.sep + file
     candidate_contexts = getContexts(directory_path)        
     for context in candidate_contexts:
+        #'context' has the entire path for the candidate context folder
         arff_data = []        
         for document in decision_tree_list:
             doc_int = int(document)
